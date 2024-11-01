@@ -1,32 +1,28 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from "class-validator";
+import { IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from "class-validator";
 import { ROLES } from "src/utility/common/user-roles.enum";
 
-export class UserSignUpDTO{
-    @IsNotEmpty({message: "Name can't be null"})
-    @IsString({message: "Name should be a string"})
-    name:string;
+export class UserSignUpDTO {
+    @IsNotEmpty({ message: "Imię nie może być puste" })
+    @IsString({ message: "Imię powinno być tekstem" })
+    username: string;
 
-    @IsNotEmpty({message: "Surname can't be null"})
-    @IsString({message: "Surname should be a string"})
-    surname:string;
+    @IsNotEmpty({ message: "Nazwisko nie może być puste" })
+    @IsString({ message: "Nazwisko powinno być tekstem" })
+    surname: string;
 
-    @IsNotEmpty({message: "Phone can't be null"})
-    @IsString({message: "Phone should be a string"})
-    phone:string;
-    
-    @IsNotEmpty({message: "Email can't be null"})
-    @IsEmail({}, {message: "Provide a valid email"})
-    email:string;
+    @IsNotEmpty({ message: "Numer telefonu nie może być pusty" })
+    @IsString({ message: "Numer telefonu powinien być tekstem" })
+    phone: string;
 
-    @IsNotEmpty({message: "Password can't be null"})
-    @MinLength(5, {message: "Password must be at least 5 characters"})
-    password:string;
+    @IsNotEmpty({ message: "Hasło nie może być puste" })
+    @MinLength(5, { message: "Hasło musi mieć co najmniej 5 znaków" })
+    password: string;
 
     @IsOptional()
-    @IsString({message: "Image should be a string"})
+    @IsString({ message: "Obraz powinien być tekstem" })
     image?: string;
 
     @IsOptional()
-    @IsEnum(ROLES, { message: "Role must be a valid enum value" })
-    role?: ROLES;
+    @IsEnum(ROLES, { message: "Rola musi być poprawną wartością enum" })
+    role: ROLES;
 }

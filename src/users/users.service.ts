@@ -1,52 +1,98 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserDTO } from './DTO/create-user.DTO';
+import { UpdateUserDTO } from './DTO/update-user.DTO';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { Repository } from 'typeorm';
-import { UserSignUpDTO } from './dto/user-signup.dto';
+import { UserSignUpDTO } from './DTO/user-signup.DTO';
 import { hash, compare } from 'bcrypt';
-import { UserSignInDTO } from './dto/user-signin.dto';
+import { UserSignInDTO } from './DTO/user-signin.DTO';
 import { sign } from 'jsonwebtoken';
+import { USER_STATUS } from 'src/utility/common/user-status.enum';
+import { Twilio } from 'twilio';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private usersRepository: Repository<UserEntity>,
-  ) {}
+  ) { }
 
   async signup(body: UserSignUpDTO): Promise<UserEntity> {
-    const userExists = await this.findUserByEmail(body.email)
-    if (userExists) throw new BadRequestException('Email is not available')
-    body.password = await hash(body.password, 10)
-    let user = this.usersRepository.create(body);
-    user = await this.usersRepository.save(user)
-    delete user.password
+    const phonePrefix = body.phone.substring(0, 3);
+    const phoneRest = body.phone.substring(3);
+
+    const userExists = await this.usersRepository.createQueryBuilder('users')
+      .where('users.phone = :phone', { phone: phoneRest })
+      .andWhere('users.role = :role', { role: body.role })
+      .getOne();
+
+
+    if (userExists) throw new BadRequestException('Numer telefonu jest już zajęty');
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    body.password = await hash(body.password, 10);
+    let user = this.usersRepository.create({
+      ...body,
+      verificationCode,
+      phone: phoneRest,
+      prefix: phonePrefix,
+    });
+    user = await this.usersRepository.save(user);
+    delete user.password;
+
+    const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+    const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+    const twilioClient = new Twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+
+    //   await twilioClient.messages.create({
+    //     body: `Twój kod weryfikacyjny to: ${verificationCode}`,
+    //     from: '+14154939245',
+    //     to: `${phonePrefix}${phoneRest}` 
+    // });
+
     return user;
   }
 
-  async signin(userSignInDto: UserSignInDTO): Promise<UserEntity> {
-    if (!userSignInDto.email || !userSignInDto.password) {
-      throw new BadRequestException('Email and password must be provided');
+  async signin(userSignInDTO: UserSignInDTO): Promise<UserEntity> {
+
+    if (!userSignInDTO.phone || !userSignInDTO.password) {
+      throw new BadRequestException('phone and password must be provided');
     }
-    
+
     const userExists = await this.usersRepository.createQueryBuilder('users')
       .addSelect("users.password")
-      .where('users.email=:email', { email: userSignInDto.email })
+      .where('users.phone = :phone', { phone: userSignInDTO.phone })
+      .andWhere('users.role = :role', { role: userSignInDTO.role })
       .getOne();
-      
-    if (!userExists) throw new BadRequestException('Bad Credentials')
 
-    const matchPassword = await compare(userSignInDto.password, userExists.password)
-    if (!matchPassword) throw new BadRequestException('Bad Credentials')
+    if (!userExists) throw new BadRequestException('Bad Credentials');
 
-    delete userExists.password
+    const matchPassword = await compare(userSignInDTO.password, userExists.password);
+    if (!matchPassword) throw new BadRequestException('Bad Credentials');
 
-    return userExists
+    delete userExists.password;
+    return userExists;
   }
 
-  create(createUserDto: CreateUserDto) {
+  async verificationUser(id: number, code: string): Promise<boolean> {
+
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) {
+      throw new NotFoundException('Użytkownik nie został znaleziony');
+    }
+    if (user.verificationCode !== code) {
+      throw new BadRequestException('Zły kod weryfikacyjny');
+    }
+
+    user.status = USER_STATUS.ACTIVATED;
+
+    await this.usersRepository.save(user);
+
+    return true;
+  }
+
+  create(createUserDTO: CreateUserDTO) {
     return 'This action adds a new user';
   }
 
@@ -55,12 +101,12 @@ export class UsersService {
   }
 
   async findOne(id: number): Promise<UserEntity> {
-    const user = await this.usersRepository.findOneBy({id})
-    if(!user) throw new NotFoundException("user not found")
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) throw new NotFoundException("User not found");
     return user;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
+  update(id: number, updateUserDTO: UpdateUserDTO) {
     return `This action updates a #${id} user`;
   }
 
@@ -68,12 +114,12 @@ export class UsersService {
     return `This action removes a #${id} user`;
   }
 
-  async findUserByEmail(email: string){
-    return await this.usersRepository.findOneBy({ email });
+  async findUserByPhone(phone: string) {
+    return await this.usersRepository.findOneBy({ phone });
   }
 
   async accessToken(user: UserEntity): Promise<string> {
-    return sign({ id: user.id, email: user.email }, process.env.ACCESS_TOKEN_SECRET_KEY, { expiresIn: process.env.ACCESS_TOKEN_EXPIRE_TIME })
+    return sign({ id: user.id, phone: user.phone }, process.env.ACCESS_TOKEN_SECRET_KEY, { expiresIn: process.env.ACCESS_TOKEN_EXPIRE_TIME });
   }
 
 }

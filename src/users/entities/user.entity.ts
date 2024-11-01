@@ -1,6 +1,7 @@
+import { BusinessEntity } from "src/business/entities/business.entity";
 import { ROLES } from "src/utility/common/user-roles.enum";
 import { USER_STATUS } from "src/utility/common/user-status.enum";
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, Timestamp } from "typeorm";
+import { Column, CreateDateColumn, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn, Timestamp } from "typeorm";
 
 @Entity('users')
 export class UserEntity {
@@ -8,16 +9,19 @@ export class UserEntity {
     id: number;
 
     @Column()
-    name!: string;
+    username!: string;
 
     @Column()
     surname!: string;
 
-    @Column({unique: true})
-    email!: string;
-
     @Column()
     phone!: string;
+
+    @Column({ nullable: true })
+    email?: string | null;
+
+    @Column()
+    prefix!: string;
 
     @Column({select:false})
     password!: string;
@@ -31,7 +35,7 @@ export class UserEntity {
     @Column({ type: 'enum', enum: USER_STATUS, default: USER_STATUS.WAITING_FOR_VERIFICATION })
     status!: USER_STATUS;
 
-    @Column({ type: 'varchar', nullable: true, length: 4 })
+    @Column({ type: 'varchar', nullable: true, length: 6 })
     verificationCode?: string | null;
 
     @CreateDateColumn()
@@ -39,4 +43,10 @@ export class UserEntity {
 
     @CreateDateColumn()
     updatedAt!: Timestamp;
+
+    @OneToMany(() => BusinessEntity, (business) => business.owner)
+    ownedBusinesses: BusinessEntity[];
+
+    @ManyToMany(() => BusinessEntity, (business) => business.workers)
+    businesses: BusinessEntity[]; 
 }

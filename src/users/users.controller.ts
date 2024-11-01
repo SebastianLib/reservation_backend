@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserDTO } from './dto/create-user.dto';
+import { UpdateUserDTO } from './dto/update-user.dto';
 import { UserSignUpDTO } from './dto/user-signup.dto';
 import { UserEntity } from './entities/user.entity';
 import { UserSignInDTO } from './dto/user-signin.dto';
@@ -13,7 +13,8 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
   @Post("signup")
-  async signup(@Body() body:UserSignUpDTO):Promise<UserEntity>{    
+  async signup(@Body() body:UserSignUpDTO):Promise<UserEntity>{
+        
     return await this.usersService.signup(body)
   }
 
@@ -28,12 +29,17 @@ export class UsersController {
   
    return {accessToken, user}
   }
+
+  @Patch('verification/:id/:code')
+  async verificationUser(@Param('id') id: number, @Param('code') code: string): Promise<boolean> {
+    return await this.usersService.verificationUser(id, code);
+  }
+
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
+  create(@Body() createUserDto: CreateUserDTO) {
     return this.usersService.create(createUserDto);
   }
 
-  @UseGuards(AuthenticationGuard)
   @Get()
   async findAll() {
     return await this.usersService.findAll();
@@ -45,7 +51,7 @@ export class UsersController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDTO) {
     return this.usersService.update(+id, updateUserDto);
   }
 
