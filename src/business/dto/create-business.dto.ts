@@ -18,9 +18,9 @@ export class CreateBusinessDTO {
   @IsOptional()
   email: string;
 
-  @IsString()
+  @IsNumber({}, { each: true })
   @IsNotEmpty()
-  category: string;
+  categoriesIds: number[];
 
   @IsString()
   @IsNotEmpty()

@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CreateBusinessDTO} from './dto/create-business.dto';
+import { In, Repository } from 'typeorm';
+import { CreateBusinessDTO } from './dto/create-business.dto';
 import { UpdateBusinessDTO } from './dto/update-business.dto';
 import { BusinessEntity } from './entities/business.entity';
 import { UserEntity } from 'src/users/entities/user.entity';
+import { CategoryEntity } from 'src/categories/entities/category.entity';
 
 @Injectable()
 export class BusinessService {
@@ -13,6 +14,8 @@ export class BusinessService {
     private readonly businessRepository: Repository<BusinessEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(CategoryEntity)
+    private readonly categoryRepository: Repository<CategoryEntity>,
   ) { }
 
   async create(createBusinessDto: CreateBusinessDTO): Promise<BusinessEntity> {
@@ -28,10 +31,20 @@ export class BusinessService {
       ))
       : [];
 
+
+    const categories = await this.categoryRepository.findBy({
+      id: In(createBusinessDto.categoriesIds),
+    });
+    
+    if (categories.length !== createBusinessDto.categoriesIds.length) {
+      throw new NotFoundException('One or more categories not found');
+    }
+
     const business = this.businessRepository.create({
       ...createBusinessDto,
       owner,
       workers,
+      categories, 
     });
 
     return await this.businessRepository.save(business);
@@ -40,17 +53,31 @@ export class BusinessService {
 
   async findAll(): Promise<BusinessEntity[]> {
     return await this.businessRepository.find({
-        relations: {
-            owner: true,
-            workers: true,
-        },
+      relations: {
+        owner: true,
+        workers: true,
+      },
     });
-}
+  }
 
-  findOne(id: number): Promise<BusinessEntity> {
-    return this.businessRepository.findOne({where:{
-      id:id
-    }});
+  async findOne(id: number): Promise<BusinessEntity> {
+    return await this.businessRepository.findOne({
+      where: {
+        id: id
+      }
+    });
+  }
+
+  async findByUserId(userId: number): Promise<BusinessEntity[]> {
+    return await this.businessRepository.find({
+      where: {
+        owner: { id: userId },
+      },
+      relations: {
+        owner: true,
+        workers: true,
+      },
+    });
   }
 
   async update(id: number, updateBusinessDto: UpdateBusinessDTO) {

@@ -27,6 +27,11 @@ export class BusinessController {
     return this.businessService.findOne(+id);
   }
 
+  @Get('user/:userId')
+  findByUserId(@Param('userId') userId: number): Promise<BusinessEntity[]> {
+    return this.businessService.findByUserId(+userId);
+  }
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateBusinessDto: UpdateBusinessDTO) {
     return this.businessService.update(+id, updateBusinessDto);

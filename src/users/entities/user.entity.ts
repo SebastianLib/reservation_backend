@@ -1,7 +1,7 @@
 import { BusinessEntity } from "src/business/entities/business.entity";
 import { ROLES } from "src/utility/common/user-roles.enum";
 import { USER_STATUS } from "src/utility/common/user-status.enum";
-import { Column, CreateDateColumn, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn, Timestamp } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn, Timestamp } from "typeorm";
 
 @Entity('users')
 export class UserEntity {
@@ -23,11 +23,11 @@ export class UserEntity {
     @Column()
     prefix!: string;
 
-    @Column({select:false})
+    @Column({ select: false })
     password!: string;
 
-    @Column({type: "enum", enum:ROLES, array:true, default:ROLES.CUSTOMER})
-    role!: ROLES
+    @Column({ type: "enum", enum: ROLES, array: true, default: ROLES.CUSTOMER })
+    role!: ROLES;
 
     @Column({ nullable: true })
     image?: string | null;
@@ -44,9 +44,10 @@ export class UserEntity {
     @CreateDateColumn()
     updatedAt!: Timestamp;
 
-    @OneToMany(() => BusinessEntity, (business) => business.owner)
+    @OneToMany(() => BusinessEntity, (business) => business.owner, { cascade: true })
     ownedBusinesses: BusinessEntity[];
 
     @ManyToMany(() => BusinessEntity, (business) => business.workers)
-    businesses: BusinessEntity[]; 
+    @JoinTable()
+    businesses: BusinessEntity[];
 }

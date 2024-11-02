@@ -1,3 +1,4 @@
+import { CategoryEntity } from "src/categories/entities/category.entity";
 import { UserEntity } from "src/users/entities/user.entity"; 
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinTable, ManyToMany } from "typeorm";
 
@@ -17,9 +18,10 @@ export class BusinessEntity {
 
     @Column({ type: 'varchar', length: 100, nullable: true })
     email?: string;
-
-    @Column({ type: 'varchar', length: 50 })
-    category: string; 
+    
+    @ManyToMany(() => CategoryEntity, (category) => category.businesses, { eager: true })
+    @JoinTable()  
+    categories?: UserEntity[];
 
     @Column({ type: 'varchar', length: 100, nullable: true })
     street?: string;
