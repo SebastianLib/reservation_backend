@@ -1,6 +1,22 @@
 import { CategoryEntity } from "src/categories/entities/category.entity";
 import { UserEntity } from "src/users/entities/user.entity"; 
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinTable, ManyToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinTable, ManyToMany } from "typeorm";
+
+type OpenHour = {
+  isOpen: boolean;
+  open: string;
+  close: string;
+};
+
+interface OpenHours {
+  monday: OpenHour;
+  tuesday: OpenHour;
+  wednesday: OpenHour;
+  thursday: OpenHour;
+  friday: OpenHour;
+  saturday: OpenHour;
+  sunday: OpenHour;
+}
 
 @Entity('business')
 export class BusinessEntity {
@@ -18,10 +34,17 @@ export class BusinessEntity {
 
     @Column({ type: 'varchar', length: 100, nullable: true })
     email?: string;
-    
+
     @ManyToMany(() => CategoryEntity, (category) => category.businesses, { eager: true })
     @JoinTable()  
-    categories?: UserEntity[];
+    categories?: CategoryEntity[];
+
+    @ManyToOne(() => UserEntity, (user) => user.ownedBusinesses, { eager: true })
+    owner: UserEntity; 
+
+    @ManyToMany(() => UserEntity, (user) => user.businesses, { eager: true })
+    @JoinTable()  
+    workers?: UserEntity[];
 
     @Column({ type: 'varchar', length: 100, nullable: true })
     street?: string;
@@ -38,10 +61,6 @@ export class BusinessEntity {
     @Column("json", { nullable: true }) 
     images?: string[];
 
-    @ManyToOne(() => UserEntity, (user) => user.ownedBusinesses, { eager: true })
-    owner: UserEntity; 
-
-    @ManyToMany(() => UserEntity, (user) => user.businesses, { eager: true })
-    @JoinTable()  
-    workers?: UserEntity[];
+    @Column("json", { nullable: true })
+    openHours?: OpenHours;
 }

@@ -1,13 +1,24 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { MulterModule } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 import { UploadsService } from './uploads.service';
 import { UploadsController } from './uploads.controller';
-import { MulterModule } from '@nestjs/platform-express';
+import { join } from 'path';
+import { FileEntity } from './entities/upload.entity';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([FileEntity]),
     MulterModule.register({
-      dest: './uploads',
-    })
+      storage: diskStorage({
+        destination: './uploads', // folder do przechowywania plików
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `${uniqueSuffix}-${file.originalname}`);
+        },
+      }),
+    }),
   ],
   controllers: [UploadsController],
   providers: [UploadsService],

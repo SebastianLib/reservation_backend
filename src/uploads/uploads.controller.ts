@@ -2,28 +2,36 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, Upl
 import { UploadsService } from './uploads.service';
 import { CreateUploadDto } from './dto/create-upload.dto';
 import { UpdateUploadDto } from './dto/update-upload.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor, FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
+import { FileEntity } from './entities/upload.entity';
 
 @Controller('uploads')
 export class UploadsController {
-  constructor(private readonly uploadsService: UploadsService) {}
+  constructor(private readonly uploadsService: UploadsService) { }
 
-  @Post('file')
-  @UseInterceptors(FileInterceptor('file'))
-  async create(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('Brak przesłanego pliku');
+  @Post('files')
+  @UseInterceptors(AnyFilesInterceptor())
+  async uploadFile(@UploadedFiles() files: Array<Express.Multer.File>): Promise<{
+    ids: number[];
+  }> {
+    console.log(files);
+    if (!files || files.length === 0) { 
+      throw new BadRequestException('Brak przesłanych plików');
     }
+    
 
-    return { message: 'Plik przesłany pomyślnie'};
+    const savedFiles: FileEntity[] = await Promise.all(files.map(file => this.uploadsService.saveFile(file)));
+    const ids = savedFiles.map(file => file.id);
+    return { ids };
   }
+
   @Get()
   findAll() {
     return this.uploadsService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: string): Promise<FileEntity> {
     return this.uploadsService.findOne(+id);
   }
 

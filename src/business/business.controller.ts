@@ -11,12 +11,13 @@ import { ROLES } from 'src/utility/common/user-roles.enum';
 export class BusinessController {
   constructor(private readonly businessService: BusinessService) {}
 
+  @UseGuards(AuthenticationGuard, AuthorizeGuard([ROLES.ADMIN, ROLES.OWNER]))
   @Post()
   create(@Body() createBusinessDto: CreateBusinessDTO): Promise<BusinessEntity> {
     return this.businessService.create(createBusinessDto);
   }
 
-  @UseGuards(AuthenticationGuard, AuthorizeGuard([ROLES.WORKER]))
+  // @UseGuards(AuthenticationGuard, AuthorizeGuard([ROLES.WORKER]))
   @Get()
   findAll(): Promise<BusinessEntity[]> {
     return this.businessService.findAll();

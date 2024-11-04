@@ -1,6 +1,23 @@
 import { IsString, IsNotEmpty, IsOptional, IsArray, IsUrl, IsNumber } from 'class-validator';
 import { UserEntity } from 'src/users/entities/user.entity';
 
+type OpenHour = {
+  isOpen: boolean;
+  open: string;
+  close: string;
+};
+
+interface OpenHours {
+  monday: OpenHour;
+  tuesday: OpenHour;
+  wednesday: OpenHour;
+  thursday: OpenHour;
+  friday: OpenHour;
+  saturday: OpenHour;
+  sunday: OpenHour;
+}
+
+
 export class CreateBusinessDTO {
   @IsString()
   @IsNotEmpty()
@@ -50,4 +67,7 @@ export class CreateBusinessDTO {
   @IsOptional()
   @IsNumber({}, { each: true })  
   workersIds?: number[];  
+
+  @IsNotEmpty()
+  openHours?:OpenHours
 }
