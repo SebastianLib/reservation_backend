@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, BadRequestException, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, BadRequestException, UploadedFiles, Res } from '@nestjs/common';
 import { UploadsService } from './uploads.service';
-import { CreateUploadDto } from './dto/create-upload.dto';
 import { UpdateUploadDto } from './dto/update-upload.dto';
 import { AnyFilesInterceptor, FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { FileEntity } from './entities/upload.entity';
+import { join } from 'path';
 
 @Controller('uploads')
 export class UploadsController {
@@ -14,17 +14,19 @@ export class UploadsController {
   async uploadFile(@UploadedFiles() files: Array<Express.Multer.File>): Promise<{
     ids: number[];
   }> {
-    console.log(files);
     if (!files || files.length === 0) { 
       throw new BadRequestException('Brak przesłanych plików');
     }
-    
-
     const savedFiles: FileEntity[] = await Promise.all(files.map(file => this.uploadsService.saveFile(file)));
     const ids = savedFiles.map(file => file.id);
     return { ids };
   }
 
+  @Get('test-upload/:filename')
+  getUploadedFile(@Param('filename') filename: string, @Res() res) {
+    const filePath = join(__dirname, '..', '..', '..', 'uploads', filename);
+    return res.sendFile(filePath);
+  }
   @Get()
   findAll() {
     return this.uploadsService.findAll();

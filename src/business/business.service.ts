@@ -6,6 +6,9 @@ import { UpdateBusinessDTO } from './dto/update-business.dto';
 import { BusinessEntity } from './entities/business.entity';
 import { UserEntity } from 'src/users/entities/user.entity';
 import { CategoryEntity } from 'src/categories/entities/category.entity';
+import { FileEntity } from 'src/uploads/entities/upload.entity';
+import { InviteCodeEntity } from './entities/invite-code.entity';
+import { BusinessQuery } from './dto/business-query';
 
 @Injectable()
 export class BusinessService {
@@ -16,6 +19,10 @@ export class BusinessService {
     private readonly userRepository: Repository<UserEntity>,
     @InjectRepository(CategoryEntity)
     private readonly categoryRepository: Repository<CategoryEntity>,
+    @InjectRepository(FileEntity)
+    private fileRepository: Repository<FileEntity>,
+    @InjectRepository(InviteCodeEntity)
+    private inviteCodeRepository: Repository<InviteCodeEntity>,
   ) { }
 
   async create(createBusinessDto: CreateBusinessDTO): Promise<BusinessEntity> {
@@ -35,7 +42,7 @@ export class BusinessService {
     const categories = await this.categoryRepository.findBy({
       id: In(createBusinessDto.categoriesIds),
     });
-    
+
     if (categories.length !== createBusinessDto.categoriesIds.length) {
       throw new NotFoundException('One or more categories not found');
     }
@@ -44,7 +51,7 @@ export class BusinessService {
       ...createBusinessDto,
       owner,
       workers,
-      categories, 
+      categories,
     });
 
     return await this.businessRepository.save(business);
@@ -69,7 +76,7 @@ export class BusinessService {
   }
 
   async findByUserId(userId: number): Promise<BusinessEntity[]> {
-    return await this.businessRepository.find({
+    const businesses = await this.businessRepository.find({
       where: {
         owner: { id: userId },
       },
@@ -78,7 +85,53 @@ export class BusinessService {
         workers: true,
       },
     });
+
+    for (const business of businesses) {
+      if (business.images && business.images.length > 0) {
+        const imageFiles = await this.fileRepository.findByIds(business.images);
+        business.images = imageFiles.map(file => file.filename);
+      }
+    }
+
+    return businesses;
   }
+
+  async createInviteCodes(businessId:number, userId:number, query:BusinessQuery): Promise<string[]> {
+    const owner = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!owner) {
+      throw new NotFoundException('Użytkownik nie został znaleziony');
+    }
+
+    const business = await this.businessRepository.findOne({
+      where: { id: businessId },
+      relations: ['owner'], 
+    });
+  
+    if (!business || business.owner.id !== owner.id) {
+      throw new NotFoundException('Biznes nie znaleziony');
+    }
+
+    const quantity = parseInt(query.quantity ?? '1', 10);
+    const validQuantity = isNaN(quantity) || quantity < 1 ? 1 : quantity;
+  
+    const inviteCodes = generateRandomCodes(validQuantity);
+    const expirationTime = new Date();
+    expirationTime.setHours(expirationTime.getHours() + 24);
+
+    const inviteEntities = inviteCodes.map((code) => 
+      this.inviteCodeRepository.create({
+        inviteCode: code,     
+        expirationTime,        
+        business,             
+      })
+    );
+    await this.inviteCodeRepository.save(inviteEntities);
+
+
+    return inviteCodes;
+  }
+
 
   async update(id: number, updateBusinessDto: UpdateBusinessDTO) {
     await this.businessRepository.update(id, updateBusinessDto);
@@ -89,4 +142,19 @@ export class BusinessService {
     await this.businessRepository.delete(id);
     return { deleted: true };
   }
+
+}
+
+const generateRandomCodes = (quantity: number = 1): string[] => {
+  const codes: string[] = [];
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  
+  for (let i = 0; i < quantity; i++) {
+    let code = '';
+    for (let j = 0; j < 8; j++) {
+      code += characters[Math.floor(Math.random() * characters.length)];
+    }
+    codes.push(code);
+  }
+  return codes;
 }

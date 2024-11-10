@@ -5,7 +5,7 @@ export const AuthorizeGuard = (allowedRoles: string[]) => {
         canActivate(context: ExecutionContext): boolean {
             const request = context.switchToHttp().getRequest();
             const hasRole = allowedRoles.includes(request?.currentUser?.role);
-
+            
             if (hasRole) return true;
 
             throw new UnauthorizedException("Sorry, you are not authorized");

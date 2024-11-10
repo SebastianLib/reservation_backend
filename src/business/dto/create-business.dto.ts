@@ -56,7 +56,7 @@ export class CreateBusinessDTO {
   city: string;
 
   @IsArray()
-  @IsUrl({}, { each: true })
+  // @IsUrl({}, { each: true })
   images?: string[];
 
   @IsNotEmpty()

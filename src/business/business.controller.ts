@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query } from '@nestjs/common';
 import { BusinessService } from './business.service';
 import { CreateBusinessDTO } from './dto/create-business.dto';
 import { UpdateBusinessDTO } from './dto/update-business.dto';
@@ -6,10 +6,12 @@ import { BusinessEntity } from './entities/business.entity';
 import { AuthorizeGuard } from 'src/utility/guards/authorization.guard';
 import { AuthenticationGuard } from 'src/utility/guards/authentication.guard';
 import { ROLES } from 'src/utility/common/user-roles.enum';
+import { RequestWithUser } from 'src/models/api.model';
+import { BusinessQuery } from './dto/business-query';
 
 @Controller('business')
 export class BusinessController {
-  constructor(private readonly businessService: BusinessService) {}
+  constructor(private readonly businessService: BusinessService) { }
 
   @UseGuards(AuthenticationGuard, AuthorizeGuard([ROLES.ADMIN, ROLES.OWNER]))
   @Post()
@@ -31,6 +33,16 @@ export class BusinessController {
   @Get('user/:userId')
   findByUserId(@Param('userId') userId: number): Promise<BusinessEntity[]> {
     return this.businessService.findByUserId(+userId);
+  }
+
+  // @UseGuards(AuthenticationGuard, AuthorizeGuard([ROLES.ADMIN, ROLES.OWNER]))
+  @Post("invite/:id")
+  createInviteCodes(
+    @Param('id') id: number, 
+    @Req() req: RequestWithUser, 
+    @Query() query: BusinessQuery
+  ): Promise<string[]> {
+    return this.businessService.createInviteCodes(id, req.currentUser.id, query);
   }
 
   @Patch(':id')

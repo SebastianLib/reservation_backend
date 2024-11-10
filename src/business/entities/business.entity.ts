@@ -1,6 +1,7 @@
 import { CategoryEntity } from "src/categories/entities/category.entity";
 import { UserEntity } from "src/users/entities/user.entity"; 
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinTable, ManyToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinTable, ManyToMany, OneToMany } from "typeorm";
+import { InviteCodeEntity } from "./invite-code.entity";
 
 type OpenHour = {
   isOpen: boolean;
@@ -63,4 +64,7 @@ export class BusinessEntity {
 
     @Column("json", { nullable: true })
     openHours?: OpenHours;
+
+    @OneToMany(() => InviteCodeEntity, inviteCode => inviteCode.business)
+    inviteCodes: InviteCodeEntity[];
 }
