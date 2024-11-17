@@ -8,7 +8,8 @@ import { UserEntity } from 'src/users/entities/user.entity';
 import { CategoryEntity } from 'src/categories/entities/category.entity';
 import { FileEntity } from 'src/uploads/entities/upload.entity';
 import { InviteCodeEntity } from './entities/invite-code.entity';
-import { BusinessQuery } from './dto/business-query';
+import { BusinessQuery } from './dto/business-query.dto';
+import { CreateInvitesDTO } from './dto/create-invites';
 
 @Injectable()
 export class BusinessService {
@@ -96,15 +97,15 @@ export class BusinessService {
     return businesses;
   }
 
-  async createInviteCodes(businessId:number, userId:number, query:BusinessQuery): Promise<string[]> {
+  async createInviteCodes(userId:number, createInvitesDto:CreateInvitesDTO): Promise<InviteCodeEntity[]> {
     const owner = await this.userRepository.findOne({ where: { id: userId } });
-
+    
     if (!owner) {
       throw new NotFoundException('Użytkownik nie został znaleziony');
     }
 
     const business = await this.businessRepository.findOne({
-      where: { id: businessId },
+      where: { id: Number(createInvitesDto.businessId) },
       relations: ['owner'], 
     });
   
@@ -112,12 +113,10 @@ export class BusinessService {
       throw new NotFoundException('Biznes nie znaleziony');
     }
 
-    const quantity = parseInt(query.quantity ?? '1', 10);
-    const validQuantity = isNaN(quantity) || quantity < 1 ? 1 : quantity;
   
-    const inviteCodes = generateRandomCodes(validQuantity);
+    const inviteCodes = generateRandomCodes(createInvitesDto.quantity);
     const expirationTime = new Date();
-    expirationTime.setHours(expirationTime.getHours() + 24);
+    expirationTime.setHours(expirationTime.getHours() + Number(createInvitesDto.expirationTime));
 
     const inviteEntities = inviteCodes.map((code) => 
       this.inviteCodeRepository.create({
@@ -128,8 +127,9 @@ export class BusinessService {
     );
     await this.inviteCodeRepository.save(inviteEntities);
 
-
-    return inviteCodes;
+    console.log(inviteEntities);
+    
+    return inviteEntities;
   }
 
 

@@ -7,7 +7,9 @@ import { AuthorizeGuard } from 'src/utility/guards/authorization.guard';
 import { AuthenticationGuard } from 'src/utility/guards/authentication.guard';
 import { ROLES } from 'src/utility/common/user-roles.enum';
 import { RequestWithUser } from 'src/models/api.model';
-import { BusinessQuery } from './dto/business-query';
+import { BusinessQuery } from './dto/business-query.dto';
+import { CreateInvitesDTO } from './dto/create-invites';
+import { InviteCodeEntity } from './entities/invite-code.entity';
 
 @Controller('business')
 export class BusinessController {
@@ -36,13 +38,12 @@ export class BusinessController {
   }
 
   // @UseGuards(AuthenticationGuard, AuthorizeGuard([ROLES.ADMIN, ROLES.OWNER]))
-  @Post("invite/:id")
+  @Post("invite")
   createInviteCodes(
-    @Param('id') id: number, 
     @Req() req: RequestWithUser, 
-    @Query() query: BusinessQuery
-  ): Promise<string[]> {
-    return this.businessService.createInviteCodes(id, req.currentUser.id, query);
+    @Body() createInvitesDto: CreateInvitesDTO
+  ): Promise<InviteCodeEntity[]> {
+    return this.businessService.createInviteCodes( req.currentUser.id, createInvitesDto);
   }
 
   @Patch(':id')

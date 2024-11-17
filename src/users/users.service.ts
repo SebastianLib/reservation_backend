@@ -62,6 +62,8 @@ export class UsersService {
 
     const userExists = await this.usersRepository.createQueryBuilder('users')
       .addSelect("users.password")
+      .leftJoinAndSelect("users.ownedBusinesses", "ownedBusinesses")
+      .leftJoinAndSelect("users.businesses", "businesses")
       .where('users.phone = :phone', { phone: userSignInDTO.phone })
       .andWhere('users.role = :role', { role: userSignInDTO.role })
       .getOne();
