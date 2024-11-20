@@ -6,13 +6,14 @@ import { CurrentUserMiddleware } from './utility/common/middlewares/current-user
 import { BusinessModule } from './business/business.module';
 import { CategoriesModule } from './categories/categories.module';
 import { UploadsModule } from './uploads/uploads.module';
-import { ServeStaticModule } from '@nestjs/serve-static'; // Import ServeStaticModule
-import { join } from 'path'; // Import join
-
+import { ServeStaticModule } from '@nestjs/serve-static'; 
+import { join } from 'path'; 
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot(dataSourceOptions),
+    ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads', 
@@ -21,6 +22,7 @@ import { join } from 'path'; // Import join
     BusinessModule,
     CategoriesModule,
     UploadsModule,
+    
   ],
   controllers: [],
   providers: [],

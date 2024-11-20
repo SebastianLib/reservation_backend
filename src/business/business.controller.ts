@@ -32,18 +32,37 @@ export class BusinessController {
     return this.businessService.findOne(+id);
   }
 
-  @Get('user/:userId')
-  findByUserId(@Param('userId') userId: number): Promise<BusinessEntity[]> {
-    return this.businessService.findByUserId(+userId);
+  @UseGuards(AuthenticationGuard, AuthorizeGuard([ROLES.ADMIN, ROLES.OWNER, ROLES.WORKER]))
+  @Get('user/businesses')
+  findByUserId(@Req() req: RequestWithUser): Promise<BusinessEntity[]> {
+    return this.businessService.findByUserId(req.currentUser.id);
   }
 
-  // @UseGuards(AuthenticationGuard, AuthorizeGuard([ROLES.ADMIN, ROLES.OWNER]))
+  @UseGuards(AuthenticationGuard, AuthorizeGuard([ROLES.ADMIN, ROLES.OWNER]))
   @Post("invite")
   createInviteCodes(
-    @Req() req: RequestWithUser, 
+    @Req() req: RequestWithUser,
     @Body() createInvitesDto: CreateInvitesDTO
   ): Promise<InviteCodeEntity[]> {
-    return this.businessService.createInviteCodes( req.currentUser.id, createInvitesDto);
+    return this.businessService.createInviteCodes(req.currentUser.id, createInvitesDto);
+  }
+
+  @UseGuards(AuthenticationGuard, AuthorizeGuard([ROLES.ADMIN, ROLES.OWNER]))
+  @Get('invite/:businessId')
+  getInviteCodes(
+    @Req() req: RequestWithUser,
+    @Param('businessId') businessId: number
+  ): Promise<InviteCodeEntity[]> {
+    return this.businessService.getInviteCodes(req.currentUser.id, businessId);
+  }
+
+  @UseGuards(AuthenticationGuard, AuthorizeGuard([ROLES.ADMIN, ROLES.OWNER, ROLES.WORKER]))
+  @Post("join/:code")
+  JoinToBusiness(
+    @Req() req: RequestWithUser,
+    @Param('code') code: string
+  ): Promise<BusinessEntity> {
+    return this.businessService.joinToBusiness(req.currentUser.id, code);
   }
 
   @Patch(':id')
@@ -56,3 +75,4 @@ export class BusinessController {
     return this.businessService.remove(+id);
   }
 }
+

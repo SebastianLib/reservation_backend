@@ -9,5 +9,9 @@ export class BusinessQuery {
     @IsOptional()
     @IsDateString()
     expirationTime?: string; 
+
+    @IsOptional()
+    @IsString()
+    businessId?: number; 
   }
   

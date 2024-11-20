@@ -43,10 +43,6 @@ export class BusinessEntity {
     @ManyToOne(() => UserEntity, (user) => user.ownedBusinesses, { eager: true })
     owner: UserEntity; 
 
-    @ManyToMany(() => UserEntity, (user) => user.businesses, { eager: true })
-    @JoinTable()  
-    workers?: UserEntity[];
-
     @Column({ type: 'varchar', length: 100, nullable: true })
     street?: string;
 
@@ -67,4 +63,7 @@ export class BusinessEntity {
 
     @OneToMany(() => InviteCodeEntity, inviteCode => inviteCode.business)
     inviteCodes: InviteCodeEntity[];
+
+    @ManyToMany(() => UserEntity, (user) => user.businesses, { eager: true })
+    workers?: UserEntity[];
 }

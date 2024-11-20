@@ -26,7 +26,6 @@ export class UsersController {
     
    const user = await this.usersService.signin(userSignInDto)
    const accessToken = await this.usersService.accessToken(user);
-  
    return {accessToken, user}
   }
 
