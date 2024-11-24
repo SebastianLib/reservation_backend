@@ -89,13 +89,13 @@ export class BusinessService {
         const imageFiles = await this.fileRepository.findByIds(business.images);
         business.images = imageFiles.map(file => file.filename);
       }
-    }
-    
+    }   
     return businesses;
   }
   
 
   async createInviteCodes(userId: number, createInvitesDto: CreateInvitesDTO): Promise<InviteCodeEntity[]> {
+
     const owner = await this.userRepository.findOne({ where: { id: userId } });
 
     if (!owner) {
@@ -109,12 +109,17 @@ export class BusinessService {
 
     if (!business || business.owner.id !== owner.id) {
       throw new NotFoundException('Biznes nie znaleziony');
-    }
-
+    } 
 
     const inviteCodes = generateRandomCodes(createInvitesDto.quantity);
-    const expirationTime = new Date();
-    expirationTime.setHours(expirationTime.getHours() + Number(createInvitesDto.expirationTime));
+    let expirationTime: Date | null = null; 
+
+    if(createInvitesDto.expirationTime === 0){
+
+    }else{
+      expirationTime = new Date();
+      expirationTime.setHours(expirationTime.getHours() + Number(createInvitesDto.expirationTime));
+    }
 
     const inviteEntities = inviteCodes.map((code) =>
       this.inviteCodeRepository.create({
@@ -127,9 +132,9 @@ export class BusinessService {
 
     return inviteEntities;
   }
+
   async getInviteCodes(userId: number, businessId: number): Promise<InviteCodeEntity[]> {
     const owner = await this.userRepository.findOne({ where: { id: userId } });
-
     if (!owner) {
       throw new NotFoundException('Użytkownik nie został znaleziony');
     }
@@ -146,7 +151,7 @@ export class BusinessService {
       .getMany();
 
     if (!invites || invites.length === 0) {
-      throw new NotFoundException('Brak zaproszeń dla tego salonu');
+      return [];
     }
 
     return invites;
@@ -168,7 +173,7 @@ export class BusinessService {
       throw new NotFoundException('Nie znaleziono kodu zaproszenia');
     }
 
-    if (inviteCodeEntity.expirationTime < new Date()) {
+    if (inviteCodeEntity.expirationTime && inviteCodeEntity.expirationTime < new Date()) {
       throw new BadRequestException('Kod zaproszenia wygasł');
     }
     
@@ -181,7 +186,11 @@ export class BusinessService {
 
     business.workers = [...(business.workers || []), user];
 
-   return await this.businessRepository.save(business);
+   await this.businessRepository.save(business);
+   
+   await this.inviteCodeRepository.remove(inviteCodeEntity);
+
+   return business;
   }
 
 
@@ -190,9 +199,9 @@ export class BusinessService {
     return this.findOne(id);
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<boolean> {    
     await this.businessRepository.delete(id);
-    return { deleted: true };
+    return true
   }
 
 

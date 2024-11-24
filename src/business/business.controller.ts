@@ -47,7 +47,7 @@ export class BusinessController {
     return this.businessService.createInviteCodes(req.currentUser.id, createInvitesDto);
   }
 
-  @UseGuards(AuthenticationGuard, AuthorizeGuard([ROLES.ADMIN, ROLES.OWNER]))
+  @UseGuards(AuthenticationGuard, AuthorizeGuard([ROLES.ADMIN, ROLES.OWNER, ROLES.WORKER]))
   @Get('invite/:businessId')
   getInviteCodes(
     @Req() req: RequestWithUser,
@@ -71,7 +71,7 @@ export class BusinessController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: string): Promise<boolean> {
     return this.businessService.remove(+id);
   }
 }
